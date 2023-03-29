@@ -1,0 +1,29 @@
+[package]
+name = "mlum_inner"
+authors = ["dessera"]
+description = "mlum inner service"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+actix-web = "4.2.1"
+actix-rt = "2.8.0"
+mongodb = "2.1"
+bson = { version = "2", features = ["chrono-0_4"] }
+tokio = "1"
+serde = { version = "1.0.152", features = ["derive"] }
+serde_json = "1.0.95"
+chrono = { version = "*", features = ["serde"] }
+dotenv = "0.15.0"
+openssl = { version = "0.10.45", features = ["vendored"] }
+nanoid = "0.4.0"
+
+[[bin]]
+name = "_mlum_inner_user_service"
+path = "src/bin/user_service.rs"
+
+[[bin]]
+name = "_mlum_inner_mongodb"
+path = "src/bin/mongodb.rs"
