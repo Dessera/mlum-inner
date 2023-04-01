@@ -27,7 +27,7 @@
 
 ## 用户操作描述 /users
 ### 注册 /register
-#### 请求
+#### 请求 POST
 1. 用户名 username string
 2. 密码 password string
 3. 手机号码 phone option(string)
@@ -36,7 +36,7 @@
 1. token string
 
 ### 登录 /login
-#### 请求
+#### 请求 POST
 1. 用户名 username string
 2. 密码 password string
 3. 手机号码 phone option(string)
@@ -45,13 +45,13 @@
 1. token string
 
 ### 登出 /logout
-#### 请求
+#### 请求 POST
 1. token string
 #### 返回
 1. 无
 
 ### 获取用户信息 /profile
-#### 请求
+#### 请求 GET
 1. 用户名 username string
 #### 返回
 1. 用户数据项
@@ -59,10 +59,25 @@
 返回的数据中，password字段和token字段为空
 
 ### 修改用户信息 /update
-#### 请求
+#### 请求 PUT
 1. 用户数据项
 #### 返回
 1. 用户数据项
 #### 注意
 发送的数据中，需要token字段，
 修改的数据中，password字段和token字段为空
+
+### 删除用户 /delete
+#### 请求 DELETE
+1. 用户名 username string
+#### 返回
+1. 无
+#### 注意
+并不会真正删除用户，只是将用户的数据项中的is_deprecated字段设置为true
+
+### 验证用户 /verify
+#### 请求 POST
+1. 用户名 username string
+2. token string
+#### 返回
+1. 无

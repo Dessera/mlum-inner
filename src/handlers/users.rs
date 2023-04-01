@@ -1,11 +1,10 @@
 /**
  * route handlers for users
  */
-
 use crate::{
     app_state,
     errors::WebError,
-    models::users::{CreateUser, User},
+    models::users::{CertificateUser, CreateUser, User},
     services::users::*,
 };
 
@@ -57,12 +56,21 @@ pub async fn user_update(
 }
 
 pub async fn user_delete(
-    user_name: web::Json<String>,
+    certification: web::Json<CertificateUser>,
     app_state: web::Data<app_state::AppState>,
 ) -> Result<HttpResponse, WebError> {
-    serv_user_delete(&app_state.database, user_name.into_inner())
+    serv_user_delete(&app_state.database, certification.into_inner())
         .await
         .map(|_| HttpResponse::Ok().json("delete success"))
+}
+
+pub async fn user_verify(
+    user_info: web::Json<CertificateUser>,
+    app_state: web::Data<app_state::AppState>,
+) -> Result<HttpResponse, WebError> {
+    serv_user_verify(&app_state.database, user_info.into_inner())
+        .await
+        .map(|_| HttpResponse::Ok().json("certificate success"))
 }
 
 #[cfg(test)]
@@ -70,7 +78,7 @@ mod user_handler_test {
     use actix_web::{body::MessageBody, web};
     use tokio::sync::Mutex;
 
-    use crate::models::users::{CreateUser, User};
+    use crate::models::users::{CertificateUser, CreateUser, User};
 
     async fn create_app_state() -> crate::app_state::AppState {
         let database = mongodb::Client::with_uri_str("mongodb://localhost:27017")
@@ -92,8 +100,8 @@ mod user_handler_test {
         let user_info = web::Json(CreateUser {
             username: "dessera".into(),
             password: "123456".into(),
-            phone: None,
-            email: None,
+            phone: "".into(),
+            email: "".into(),
         });
         // call user_register
         let result = super::user_register(user_info, web::Data::new(app_state)).await;
@@ -107,8 +115,8 @@ mod user_handler_test {
         let user_info = web::Json(CreateUser {
             username: "dessera".into(),
             password: "123456".into(),
-            phone: None,
-            email: None,
+            phone: "".into(),
+            email: "".into(),
         });
         let result = super::user_login(user_info, web::Data::new(app_state)).await;
         assert!(result.is_ok());
@@ -118,10 +126,10 @@ mod user_handler_test {
     async fn test_user_login_fail() {
         let app_state = create_app_state().await;
         let user_info = web::Json(CreateUser {
-            username: "desseraa".into(),
+            username: "dessera".into(),
             password: "123456".into(),
-            phone: None,
-            email: None,
+            phone: "".into(),
+            email: "".into(),
         });
         let result = super::user_login(user_info, web::Data::new(app_state)).await;
         assert!(!result.is_ok());
@@ -133,8 +141,8 @@ mod user_handler_test {
         let user_info = web::Json(CreateUser {
             username: "dessera".into(),
             password: "123456".into(),
-            phone: None,
-            email: None,
+            phone: "".into(),
+            email: "".into(),
         });
 
         // login first
@@ -169,10 +177,10 @@ mod user_handler_test {
         // login first
         let app_state = create_app_state().await;
         let user_info = web::Json(CreateUser {
-            username: String::from("dessera"),
-            password: String::from("123456"),
-            phone: None,
-            email: None,
+            username: "dessera".into(),
+            password: "123456".into(),
+            phone: "".into(),
+            email: "".into(),
         });
         let result = super::user_login(user_info, web::Data::new(app_state)).await;
         assert!(result.is_ok());
@@ -209,9 +217,60 @@ mod user_handler_test {
     #[tokio::test]
     #[ignore = "do not delete user dessera"]
     async fn test_user_delete() {
+        // login first
         let app_state = create_app_state().await;
-        let user_name = web::Json(String::from("dessera"));
-        let result = super::user_delete(user_name, web::Data::new(app_state)).await;
+        let user_info = web::Json(CreateUser {
+            username: "dessera".into(),
+            password: "123456".into(),
+            phone: "".into(),
+            email: "".into(),
+        });
+        let result = super::user_login(user_info, web::Data::new(app_state)).await;
+        assert!(result.is_ok());
+
+        // get token
+        let token = result.unwrap().into_body().try_into_bytes().unwrap().into();
+        let token = String::from_utf8(token).unwrap();
+        // remove the first and last "
+        let token = token[1..token.len() - 1].to_string();
+
+        let app_state = create_app_state().await;
+        let certification = web::Json(CertificateUser {
+            username: String::from("dessera"),
+            token,
+        });
+
+        let result = super::user_delete(certification, web::Data::new(app_state)).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    #[ignore = "token is not valid because of login_test"]
+    async fn test_user_certificate() {
+        // login first
+        let app_state = create_app_state().await;
+        let user_info = web::Json(CreateUser {
+            username: "dessera".into(),
+            password: "123456".into(),
+            phone: "".into(),
+            email: "".into(),
+        });
+        let result = super::user_login(user_info, web::Data::new(app_state)).await;
+        assert!(result.is_ok());
+
+        // get token
+        let token = result.unwrap().into_body().try_into_bytes().unwrap().into();
+        let token = String::from_utf8(token).unwrap();
+        // remove the first and last "
+        let token = token[1..token.len() - 1].to_string();
+
+        // certificate
+        let app_state = create_app_state().await;
+        let certificate = web::Json(CertificateUser {
+            username: String::from("dessera"),
+            token,
+        });
+        let result = super::user_verify(certificate, web::Data::new(app_state)).await;
         assert!(result.is_ok());
     }
 }

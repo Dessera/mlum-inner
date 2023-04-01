@@ -46,6 +46,7 @@ pub struct User {
 
     // token
     pub token: String,
+    pub valid_token_time: i64,
 
     // is deprecated
     pub is_deprecated: bool,
@@ -55,8 +56,14 @@ pub struct User {
 pub struct CreateUser {
     pub username: String,
     pub password: String,
-    pub phone: Option<String>,
-    pub email: Option<String>,
+    pub phone: String,
+    pub email: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CertificateUser {
+    pub username: String,
+    pub token: String,
 }
 
 impl From<web::Json<CreateUser>> for CreateUser {
@@ -82,14 +89,15 @@ impl From<CreateUser> for User {
             avatar: String::new(),
             school: String::new(),
             major: String::new(),
-            phone: String::new(),
-            email: String::new(),
+            phone: value.phone,
+            email: value.email,
             following: vec![],
             participated: vec![],
             published: vec![],
             collection: vec![],
             register_time: Utc::now().timestamp(),
             token: String::new(),
+            valid_token_time: Utc::now().timestamp(),
             is_deprecated: false,
         }
     }
@@ -147,6 +155,7 @@ impl std::convert::From<User> for Bson {
         doc.insert("collection", value.collection);
         doc.insert("register_time", value.register_time);
         doc.insert("token", value.token);
+        doc.insert("valid_token_time", value.valid_token_time);
         doc.insert("is_deprecated", value.is_deprecated);
         Bson::Document(doc)
     }

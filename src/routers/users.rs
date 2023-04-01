@@ -10,6 +10,7 @@ pub fn user_routers(cfg: &mut web::ServiceConfig) {
             .route("/logout", web::post().to(user_logout))
             .route("/profile", web::get().to(user_profile))
             .route("/update", web::put().to(user_update))
-            .route("/delete", web::delete().to(user_delete)),
+            .route("/delete", web::delete().to(user_delete))
+            .route("/verify", web::post().to(user_verify)),
     );
 }

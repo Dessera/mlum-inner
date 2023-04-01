@@ -1,3 +1,4 @@
+use actix_cors::Cors;
 use actix_web::{web, App, HttpServer};
 use dotenv::dotenv;
 
@@ -22,6 +23,12 @@ async fn main() -> Result<(), std::io::Error> {
     let app = move || {
         App::new()
             .app_data(shared_data.clone())
+            .wrap(Cors::default()
+                .allow_any_origin()
+                .allow_any_method()
+                .allow_any_header()
+                .max_age(3600)
+            )
             .configure(users::user_routers)
             .configure(general::general_routers)
     };
