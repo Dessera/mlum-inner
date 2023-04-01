@@ -66,6 +66,11 @@ pub struct CertificateUser {
     pub token: String,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct QueryUserName {
+    pub username: String,
+}
+
 impl From<web::Json<CreateUser>> for CreateUser {
     fn from(value: web::Json<CreateUser>) -> Self {
         CreateUser {

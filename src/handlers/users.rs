@@ -4,11 +4,11 @@
 use crate::{
     app_state,
     errors::WebError,
-    models::users::{CertificateUser, CreateUser, User},
+    models::users::{CertificateUser, CreateUser, QueryUserName, User},
     services::users::*,
 };
 
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
 
 pub async fn user_register(
     user_info: web::Json<CreateUser>,
@@ -37,11 +37,13 @@ pub async fn user_logout(
         .map(|_| HttpResponse::Ok().json("logout success"))
 }
 
+// Use request -> param instead of web::json
 pub async fn user_profile(
-    user_name: web::Json<String>,
+    req: HttpRequest,
     app_state: web::Data<app_state::AppState>,
 ) -> Result<HttpResponse, WebError> {
-    serv_user_profile(&app_state.database, user_name.into_inner())
+    let params = web::Query::<QueryUserName>::from_query(req.query_string()).unwrap();
+    serv_user_profile(&app_state.database, params.into_inner().username)
         .await
         .map(|user| HttpResponse::Ok().json(user))
 }
@@ -166,8 +168,10 @@ mod user_handler_test {
     #[tokio::test]
     async fn test_user_profile() {
         let app_state = create_app_state().await;
-        let user_name = web::Json("dessera".into());
-        let result = super::user_profile(user_name, web::Data::new(app_state)).await;
+        let fake_request = actix_web::test::TestRequest::with_uri("/user/dessera")
+            .param("username", "dessera")
+            .to_http_request();
+        let result = super::user_profile(fake_request, web::Data::new(app_state)).await;
         assert!(result.is_ok());
     }
 
@@ -194,7 +198,9 @@ mod user_handler_test {
         // get user info
         let app_state = create_app_state().await;
         let result = super::user_profile(
-            web::Json(String::from("dessera")),
+            actix_web::test::TestRequest::with_uri("/user/dessera")
+                .param("username", "dessera")
+                .to_http_request(),
             web::Data::new(app_state),
         )
         .await;
